@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>今天吃什么 · 每日饮食推荐系统</title>
+<style>
+  :root{
+    --bg:#12100e; --card:#1c1917; --card2:#242019; --line:#332c24;
+    --text:#f5f0e8; --muted:#a89c8c; --accent:#ff8a3d; --accent2:#ffb066;
+    --green:#5fd68a; --red:#ff6b6b; --blue:#6bb6ff;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:radial-gradient(1200px 600px at 20% -10%,#2a2118 0%,var(--bg) 60%);
+    color:var(--text); font-family:"PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 20px 80px}
+  header{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+  h1{font-size:26px;margin:0;letter-spacing:.5px}
+  .sub{color:var(--muted);font-size:13px}
+  nav{display:flex;gap:6px;margin:20px 0 24px;flex-wrap:wrap}
+  nav button{
+    background:var(--card);border:1px solid var(--line);color:var(--muted);
+    padding:9px 18px;border-radius:999px;cursor:pointer;font-size:14px;transition:.18s;
+  }
+  nav button:hover{color:var(--text);border-color:#4a3f33}
+  nav button.on{background:var(--accent);border-color:var(--accent);color:#1a1208;font-weight:600}
+  .notice{
+    background:#2a2113;border:1px solid #6b5220;border-left:4px solid var(--accent2);
+    border-radius:0 10px 10px 0;padding:13px 17px;margin-bottom:16px;font-size:13.5px;
+    color:#f0e2c8;line-height:1.75;
+  }
+  .notice b{color:var(--accent2)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
+  .row{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+  label.f{color:var(--muted);font-size:13px;display:flex;align-items:center;gap:7px}
+  select,input[type=text]{
+    background:var(--card2);border:1px solid var(--line);color:var(--text);
+    padding:8px 11px;border-radius:9px;font-size:14px;outline:none;
+  }
+  select:focus,input:focus{border-color:var(--accent)}
+  .btn{
+    background:var(--accent);border:none;color:#1a1208;font-weight:700;
+    padding:11px 26px;border-radius:10px;cursor:pointer;font-size:15px;transition:.18s;
+  }
+  .btn:hover{background:var(--accent2);transform:translateY(-1px)}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--muted);font-weight:500;padding:8px 18px;font-size:13px}
+  .btn.ghost:hover{color:var(--text);border-color:var(--accent);transform:none}
+
+  /* 主推荐 */
+  .hero{
+    background:linear-gradient(135deg,#2e2317 0%,#1d1813 100%);
+    border:1px solid #4a3a26;border-radius:18px;padding:26px;margin-bottom:18px;position:relative;overflow:hidden;
+  }
+  .hero:before{content:"";position:absolute;inset:-40% -10% auto auto;width:340px;height:340px;
+    background:radial-gradient(circle,rgba(255,138,61,.16),transparent 68%);}
+  .hero .tag{display:inline-block;background:rgba(255,138,61,.16);color:var(--accent2);
+    font-size:12px;padding:4px 11px;border-radius:6px;margin-bottom:12px}
+  .hero h2{margin:0 0 6px;font-size:40px;letter-spacing:1px}
+  .hero .meta{color:var(--muted);font-size:14px;margin-bottom:16px}
+  .hero .why{color:#e8ddcc;font-size:14px;line-height:1.9;margin-bottom:20px}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;position:relative;z-index:2}
+
+  /* 打分条 */
+  .bar{height:7px;border-radius:4px;background:#2d2620;overflow:hidden;flex:1;min-width:52px}
+  .bar i{display:block;height:100%;border-radius:4px}
+  .bk{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--muted);margin:5px 0}
+  .bk span:first-child{width:52px;flex:none}
+  .bk span:last-child{width:44px;text-align:right;flex:none;font-variant-numeric:tabular-nums}
+
+  /* 候选列表 */
+  .item{display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid #241f1a}
+  .item:last-child{border-bottom:none}
+  .rank{width:26px;height:26px;flex:none;border-radius:8px;background:var(--card2);color:var(--muted);
+    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
+  .rank.top{background:var(--accent);color:#1a1208}
+  .item .nm{flex:none;width:120px;font-size:15px}
+  .item .cu{flex:none;width:74px;font-size:12px;color:var(--muted)}
+  .item .sc{flex:none;width:56px;text-align:right;font-variant-numeric:tabular-nums;font-size:14px;color:var(--accent2)}
+  .item .act{flex:none}
+
+  /* 菜品表格 */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:11px}
+  .d{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:13px;transition:.15s}
+  .d:hover{border-color:#4a3f33}
+  .d .t{font-size:15px;margin-bottom:3px;font-weight:600}
+  .d .m{font-size:12px;color:var(--muted);margin-bottom:9px}
+  .stars{display:flex;gap:2px}
+  .stars i{cursor:pointer;font-size:17px;color:#4a4136;font-style:normal;transition:.12s;line-height:1}
+  .stars i.on{color:var(--accent)}
+  .stars i:hover{transform:scale(1.18)}
+  .badge{display:inline-block;font-size:11px;padding:2px 7px;border-radius:5px;background:#2d2620;color:var(--muted);margin-right:4px}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;color:var(--muted);font-weight:500;padding:9px 8px;border-bottom:1px solid var(--line);font-size:12px}
+  td{padding:9px 8px;border-bottom:1px solid #241f1a}
+  tr:hover td{background:#1f1b16}
+
+  .slider{display:flex;align-items:center;gap:14px;margin:15px 0}
+  .slider label{width:190px;flex:none;font-size:13px;color:var(--muted)}
+  .slider label b{color:var(--accent2);font-variant-numeric:tabular-nums}
+  input[type=range]{flex:1;accent-color:var(--accent);height:5px}
+  .hint{color:var(--muted);font-size:12.5px;line-height:1.85;margin-top:14px;
+    background:#191512;border-left:3px solid var(--accent);padding:12px 15px;border-radius:0 9px 9px 0}
+  .toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(80px);
+    background:var(--accent);color:#1a1208;font-weight:600;padding:12px 26px;border-radius:11px;
+    transition:.28s;opacity:0;pointer-events:none;font-size:14px;z-index:99}
+  .toast.on{transform:translateX(-50%) translateY(0);opacity:1}
+  .hidden{display:none}
+  code{background:#2d2620;padding:2px 6px;border-radius:5px;font-size:12.5px;color:var(--accent2)}
+  .empty{color:var(--muted);font-size:14px;padding:26px 0;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🍜 今天吃什么</h1>
+    <div class="sub">加权打分 + 时间衰减推荐引擎 · 每次点"换一换"都会重新打分</div>
+  </header>
+
+  <nav>
+    <button class="on" data-tab="rec">今天吃什么</button>
+    <button data-tab="lib">菜品库 · 打分</button>
+    <button data-tab="hist">吃过什么</button>
+    <button data-tab="algo">算法参数</button>
+  </nav>
+
+  <!-- ============ 推荐页 ============ -->
+  <section id="tab-rec">
+    <div class="card" style="margin-bottom:18px">
+      <div class="row">
+        <label class="f">餐段
+          <select id="meal">
+            <option>早餐</option><option>午餐</option><option>晚餐</option><option>夜宵</option>
+          </select>
+        </label>
+        <label class="f">天气
+          <select id="weather">
+            <option>晴</option><option>阴</option><option>雨</option><option>热</option><option>冷</option>
+          </select>
+        </label>
+        <button class="btn" id="btnRec">🎲 换一换</button>
+        <span class="sub" id="recMeta"></span>
+      </div>
+    </div>
+
+    <div id="poolWarn"></div>
+    <div id="heroBox"></div>
+
+    <div class="card" style="margin-top:18px">
+      <div class="sub" style="margin-bottom:12px">完整排名（前 15）—— 看看算法为什么没选它们</div>
+      <div id="rankList"></div>
+    </div>
+  </section>
+
+  <!-- ============ 菜品库 ============ -->
+  <section id="tab-lib" class="hidden">
+    <div class="card" style="margin-bottom:18px">
+      <div class="row">
+        <input type="text" id="search" placeholder="搜索菜名 / 菜系 / 标签…" style="flex:1;min-width:200px">
+        <label class="f">菜系
+          <select id="cuisine"><option value="">全部</option></select>
+        </label>
+        <label class="f">只看
+          <select id="filter">
+            <option value="">全部菜品</option>
+            <option value="unrated">未评分</option>
+            <option value="rated">已评分</option>
+            <option value="eaten">吃过的</option>
+          </select>
+        </label>
+        <span class="sub" id="libCount"></span>
+      </div>
+    </div>
+    <div id="libGrid" class="grid"></div>
+  </section>
+
+  <!-- ============ 历史 ============ -->
+  <section id="tab-hist" class="hidden">
+    <div class="card" style="margin-bottom:18px">
+      <div class="row">
+        <span class="sub" id="histMeta"></span>
+        <button class="btn ghost" id="btnReset" style="margin-left:auto">清空所有数据</button>
+      </div>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th style="width:130px">日期</th><th>菜品</th><th style="width:110px">餐段</th><th style="width:90px">当时评分</th></tr></thead>
+        <tbody id="histBody"></tbody>
+      </table>
+      <div id="histEmpty" class="empty hidden">还没有记录。去推荐页点"就吃这个"试试。</div>
+    </div>
+  </section>
+
+  <!-- ============ 算法参数 ============ -->
+  <section id="tab-algo" class="hidden">
+    <div class="card">
+      <div class="sub" style="margin-bottom:6px">调这些参数，回推荐页点"换一换"，观察排名怎么变</div>
+      <div class="sub" style="color:var(--accent2);font-size:13px;margin-bottom:16px">
+        score = α·偏好分 + β·时间分 + γ·场景分 − 惩罚分 + 探索噪声
+      </div>
+
+      <div class="slider"><label>α 偏好分权重 <b id="vAlpha"></b></label>
+        <input type="range" id="alpha" min="0" max="1" step="0.01"></div>
+      <div class="slider"><label>β 时间分权重 <b id="vBeta"></b></label>
+        <input type="range" id="beta" min="0" max="1" step="0.01"></div>
+      <div class="slider"><label>γ 场景分权重 <b id="vGamma"></b></label>
+        <input type="range" id="gamma" min="0" max="0.5" step="0.01"></div>
+      <div class="slider"><label>λ 想念半衰期（天） <b id="vLambda"></b></label>
+        <input type="range" id="lambda" min="0.5" max="10" step="0.1"></div>
+      <div class="slider"><label>探索噪声幅度 <b id="vNoise"></b></label>
+        <input type="range" id="noiseAmp" min="0" max="0.15" step="0.005"></div>
+      <div class="slider"><label>排除最近几天吃过的 <b id="vExcl"></b></label>
+        <input type="range" id="excludeRecentDays" min="0" max="10" step="1"></div>
+      <div class="slider"><label>候选池保底数量 <b id="vPool"></b></label>
+        <input type="range" id="minPool" min="1" max="30" step="1"></div>
+
+      <div class="row" style="margin-top:20px">
+        <button class="btn" id="btnSave">保存参数</button>
+        <button class="btn ghost" id="btnDefault">恢复默认</button>
+        <label class="f"><input type="checkbox" id="includeRecent"> 调试：把刚吃过的也列出来</label>
+      </div>
+
+      <div class="hint">
+        <b>λ 是什么意思？</b>时间分 = <code>1 − exp(−天数 / λ)</code>。λ 越小，越容易"腻"，
+        隔得越久分数回升越快。<br>
+        例：λ=3 时，隔 1 天回升到 0.28，隔 3 天 0.63，隔 7 天 0.90，隔 14 天 0.99（上限为 1）。<br><br>
+        <b>想试试对比实验？</b>把 β 拉到 0，就是"纯偏好分、没有时间衰减"的对照组；
+        把 α 拉到 0，就退化成"只推最久没吃的"。对比一下推荐结果有什么不同。
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+let STATE = {};
+
+// ---------- 工具 ----------
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('on'), 1700);
+}
+async function api(path, method='GET', body=null){
+  const opt = {method};
+  if(body){ opt.headers = {'Content-Type':'application/json'}; opt.body = JSON.stringify(body); }
+  const r = await fetch(path, opt);
+  return r.json();
+}
+const pct = v => Math.max(0, Math.min(1, v));
+const stars = n => '★'.repeat(n) + '☆'.repeat(5-n);
+
+// ---------- 标签切换 ----------
+$$('nav button').forEach(b => b.onclick = () => {
+  $$('nav button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  ['rec','lib','hist','algo'].forEach(t => $('#tab-'+t).classList.toggle('hidden', t !== b.dataset.tab));
+  if(b.dataset.tab === 'lib') loadLib();
+  if(b.dataset.tab === 'hist') loadHist();
+  if(b.dataset.tab === 'algo') loadParams();
+});
+
+// ---------- 推荐 ----------
+async function recommend(){
+  const meal = $('#meal').value, weather = $('#weather').value;
+  const data = await api(`/api/recommend?meal=${encodeURIComponent(meal)}&weather=${encodeURIComponent(weather)}&topN=6`);
+  STATE.rec = data;
+  renderPoolWarn(data);
+  renderHero(data);
+  renderRank(data.top15);
+  $('#recMeta').textContent = `${data.today} · 候选 ${data.candidateCount} 道 · 排除最近 ${data.excludedRecent} 天`;
+}
+
+// 候选池不够时自动放宽排除天数，这里把这件事明说，不然用户会以为算法坏了
+function renderPoolWarn(data){
+  const box = $('#poolWarn');
+  if(!data.relaxed){ box.innerHTML = ''; return; }
+  box.innerHTML = `<div class="notice">
+    ⚠️ <b>你最近吃得太多了</b> —— ${data.poolNote}<br>
+    <span style="color:var(--muted)">这是候选池自适应机制：硬性排除会让池子空掉，
+    所以系统会逐天放宽窗口，保证永远有菜可选。想要更大的池子，就去「菜品库」多录几道菜，
+    或者把排除天数调小。</span>
+  </div>`;
+}
+
+function renderHero(data){
+  const list = data.recommendations;
+  const box = $('#heroBox');
+  if(!list || !list.length){
+    box.innerHTML = `<div class="card"><div class="empty">当前条件下没有可推荐的菜，试试换餐段或放宽排除天数。</div></div>`;
+    return;
+  }
+  const top = list[0];
+  const d = STATE.dishMap[top.dish] || {};
+  box.innerHTML = `
+    <div class="hero">
+      <div class="tag">今天${data.mealType} · ${data.weather} · 匹配度 ${(top.total*100).toFixed(1)}%</div>
+      <h2>${top.dish}</h2>
+      <div class="meta">
+        ${d.cuisine||''} · ${d.minutes||'?'} 分钟 · 约 ${d.calories||'?'} 千卡
+        ${d.spicy ? ' · ' + '🌶'.repeat(d.spicy) : ''}
+        ${d.tags ? ' · ' + String(d.tags).split(',').map(t=>'#'+t).join(' ') : ''}
+      </div>
+      <div class="why">💡 ${top.explain}</div>
+      <div class="actions">
+        <button class="btn" onclick="eatDish('${top.dish}')">✅ 就吃这个</button>
+        <button class="btn ghost" onclick="recommend()">🎲 换一换</button>
+        <button class="btn ghost" onclick="fb('${top.dish}', true)">👍 还想吃</button>
+        <button class="btn ghost" onclick="fb('${top.dish}', false)">👎 吃腻了</button>
+      </div>
+    </div>`;
+}
+
+function renderRank(list){
+  const box = $('#rankList');
+  if(!list || !list.length){ box.innerHTML = '<div class="empty">没有候选</div>'; return; }
+  box.innerHTML = list.map((r,i) => `
+    <div class="item">
+      <div class="rank ${i===0?'top':''}">${i+1}</div>
+      <div class="nm">${r.dish}</div>
+      <div class="cu">${(STATE.dishMap[r.dish]||{}).cuisine||''}</div>
+      <div style="flex:1;min-width:100px">
+        <div class="bk"><span>偏好</span><div class="bar"><i style="width:${pct(r.preference)*100}%;background:#6bb6ff"></i></div><span>${(r.preference*100).toFixed(0)}%</span></div>
+        <div class="bk"><span>时间分</span><div class="bar"><i style="width:${pct(r.novelty)*100}%;background:#5fd68a"></i></div><span>${(r.novelty*100).toFixed(0)}%</span></div>
+        <div class="bk"><span>场景</span><div class="bar"><i style="width:${pct(Math.abs(r.scene))*100}%;background:${r.scene>=0?'#ffb066':'#ff6b6b'}"></i></div><span>${r.scene>=0?'+':''}${r.scene.toFixed(2)}</span></div>
+        ${r.penalty>0?`<div class="bk"><span>惩罚</span><div class="bar"><i style="width:${pct(r.penalty)*100}%;background:#ff6b6b"></i></div><span>-${r.penalty.toFixed(2)}</span></div>`:''}
+      </div>
+      <div class="sc">${r.total.toFixed(3)}</div>
+      <div class="act"><button class="btn ghost" style="padding:5px 12px" onclick="eatDish('${r.dish}')">就它</button></div>
+    </div>`).join('');
+}
+
+window.eatDish = async function(dish){
+  await api('/api/eat','POST',{dish, rating:0, meal:$('#meal').value});
+  toast(`已记录：今天吃了「${dish}」`);
+  await loadDishMap();
+  await recommend();
+};
+window.fb = async function(dish, good){
+  await api('/api/feedback','POST',{dish, good});
+  toast(good ? '已记下：还想吃 👍' : '已记下：吃腻了 👎');
+  await loadDishMap();
+  await recommend();
+};
+
+// ---------- 菜品库 ----------
+async function loadDishMap(){
+  const list = await api('/api/dishes');
+  STATE.dishes = list;
+  STATE.dishMap = Object.fromEntries(list.map(d => [d.name, d]));
+}
+
+async function loadLib(){
+  if(!STATE.dishes) await loadDishMap();
+  const kw = $('#search').value.trim().toLowerCase();
+  const cu = $('#cuisine').value;
+  const f  = $('#filter').value;
+
+  let list = STATE.dishes.filter(d => {
+    if(cu && d.cuisine !== cu) return false;
+    if(f === 'unrated' && d.stars > 0) return false;
+    if(f === 'rated' && d.stars === 0) return false;
+    if(f === 'eaten' && d.eatCount === 0) return false;
+    if(kw){
+      const hay = (d.name+d.cuisine+d.tags+d.mealType).toLowerCase();
+      if(!hay.includes(kw)) return false;
+    }
+    return true;
+  });
+
+  $('#libCount').textContent = `${list.length} / ${STATE.dishes.length} 道`;
+  $('#libGrid').innerHTML = list.map(d => `
+    <div class="d">
+      <div class="t">${d.name}</div>
+      <div class="m">${d.cuisine} · ${d.minutes}分钟 · ${d.calories}千卡${d.spicy?' · '+'🌶'.repeat(d.spicy):''}</div>
+      <div class="m">${String(d.tags||'').split(',').filter(Boolean).map(t=>`<span class="badge">${t}</span>`).join('')}</div>
+      <div class="stars" data-dish="${d.name}">
+        ${[1,2,3,4,5].map(n=>`<i class="${n<=d.stars?'on':''}" onclick="rate('${d.name}',${n})">★</i>`).join('')}
+      </div>
+      <div class="m" style="margin:8px 0 0">${d.eatCount>0?`吃过 ${d.eatCount} 次${d.lastEaten?' · 上次 '+d.lastEaten:''}`:'还没吃过'}</div>
+    </div>`).join('') || '<div class="empty">没有匹配的菜品</div>';
+}
+
+window.rate = async function(dish, n){
+  await api('/api/rate','POST',{dish, stars:n});
+  const d = STATE.dishMap[dish]; if(d) d.stars = n;
+  toast(`「${dish}」评为 ${n} 星`);
+  loadLib();
+};
+
+// ---------- 历史 ----------
+async function loadHist(){
+  const s = await api('/api/stats');
+  const h = (s.history || []).slice().reverse();
+  $('#histMeta').textContent = `共 ${s.historyCount} 条 · 已评分 ${s.rated}/${s.total} 道 · 吃过 ${s.eaten} 道`;
+  $('#histEmpty').classList.toggle('hidden', h.length > 0);
+  $('#histBody').innerHTML = h.map(line => {
+    const [date, dish, rating, meal] = line.split('|');
+    return `<tr><td style="color:var(--muted)">${date}</td><td>${dish}</td>
+      <td style="color:var(--muted)">${meal||'-'}</td>
+      <td>${rating && rating!=='0' ? stars(+rating) : '<span style="color:var(--muted)">未评分</span>'}</td></tr>`;
+  }).join('');
+}
+
+// ---------- 参数 ----------
+async function loadParams(){
+  const p = await api('/api/params');
+  for(const k of ['alpha','beta','gamma','lambda','noiseAmp','excludeRecentDays','minPool']){
+    const el = $('#'+k); if(el) el.value = p[k];
+  }
+  $('#includeRecent').checked = !!p.includeRecent;
+  syncLabels();
+}
+const LABELS = {alpha:'vAlpha', beta:'vBeta', gamma:'vGamma', lambda:'vLambda', noiseAmp:'vNoise', excludeRecentDays:'vExcl', minPool:'vPool'};
+function syncLabels(){
+  for(const [k,id] of Object.entries(LABELS)) $('#'+id).textContent = $('#'+k).value;
+}
+Object.keys(LABELS).forEach(k => { const el = $('#'+k); if(el) el.oninput = syncLabels; });
+
+$('#btnSave').onclick = async () => {
+  await api('/api/params','POST',{
+    alpha:+$('#alpha').value, beta:+$('#beta').value, gamma:+$('#gamma').value,
+    lambda:+$('#lambda').value, noiseAmp:+$('#noiseAmp').value,
+    excludeRecentDays:+$('#excludeRecentDays').value,
+    minPool:+$('#minPool').value,
+    includeRecent:$('#includeRecent').checked
+  });
+  toast('参数已保存，去推荐页看变化');
+};
+$('#btnDefault').onclick = async () => {
+  await api('/api/params','POST',{alpha:0.65,beta:0.30,gamma:0.10,lambda:3.0,noiseAmp:0.03,excludeRecentDays:3,minPool:8,includeRecent:false});
+  await loadParams();
+  toast('已恢复默认参数');
+};
+
+// ---------- 初始化 ----------
+$('#btnRec').onclick = recommend;
+$('#meal').onchange = recommend;
+$('#weather').onchange = recommend;
+$('#search').oninput = loadLib;
+$('#cuisine').onchange = loadLib;
+$('#filter').onchange = loadLib;
+$('#btnReset').onclick = async () => {
+  if(!confirm('确定清空所有评分和历史记录吗？')) return;
+  await api('/api/reset','POST');
+  await loadDishMap(); await loadHist(); toast('已清空');
+};
+
+(async function init(){
+  await loadDishMap();
+  const meals = new Set(STATE.dishes.map(d => d.mealType));
+  const cus = [...new Set(STATE.dishes.map(d => d.cuisine))];
+  $('#cuisine').innerHTML = '<option value="">全部</option>' + cus.map(c=>`<option>${c}</option>`).join('');
+
+  // 按当前时间预选餐段
+  const h = new Date().getHours();
+  $('#meal').value = h < 10 ? '早餐' : h < 15 ? '午餐' : h < 21 ? '晚餐' : '夜宵';
+
+  await recommend();
+})();
+</script>
+</body>
+</html>
